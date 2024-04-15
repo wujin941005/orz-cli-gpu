@@ -40,6 +40,16 @@ cargo build --release
 ./target/release/ore.exe --rpc "" --priority-fee 1 --keypair 'path to keypair' --priority-fee 1 mine --threads 4
 ```
 
+FOR mine-v2
+
+- `-s 100` - is used to control send_interval to rpc.
+- `-b 5` - is used to set the batch size. Max 5. 
+- `-w C:\Folder\To\Wallets` - is a folder containing all the wallets (.json) that you want to mine with.
+```sh
+./target/release/ore.exe --rpc "" mine-v2  -w D:\Dev\MinerWallets -s 100 --threads 4 -b 5
+```
+
+
 You will now run your hashing on the GPU instead of the CPU!
 
 Donations in ORE or SOL: EVK3M6Cth3uPZcATCtnZ16mqArSNXt5oC6kcmakwXudb
