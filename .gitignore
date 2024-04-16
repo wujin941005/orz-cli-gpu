@@ -3,3 +3,6 @@ output.log
 ore.bat
 test.exe
 cargo.lock
+windows.exe
+windows.exp
+windows.lib
