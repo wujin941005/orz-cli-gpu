@@ -16,7 +16,7 @@ impl Miner {
             println!("Last reset at: {}", treasury.last_reset_at);
             println!(
                 "Reward rate: {} ORZ",
-                (treasury.reward_rate as f64) / 10f64.powf(ore::TOKEN_DECIMALS as f64)
+                (treasury.reward_rate as f64) / 10f64.powf(orz::TOKEN_DECIMALS as f64)
             );
             println!(
                 "Total claimed rewards: {} ORZ",
