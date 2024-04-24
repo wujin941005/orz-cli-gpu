@@ -696,11 +696,10 @@ impl MinerV2 {
             for pubkey in &results_pubkeys {
                 let pubkey = pubkey.to_owned();
 
-                sleep(Duration::from_millis(200)).await;
+                sleep(Duration::from_millis(100)).await;
                 let orz_balance = MinerV2::get_orz_display_balance_v2(&rpc_client, pubkey).await;
                 total_orz_balance += orz_balance;
 
-                sleep(Duration::from_millis(200)).await;
                 let proof = get_proof(&rpc_client, pubkey).await;
                 let rewards = proof.claimable_rewards;
 
