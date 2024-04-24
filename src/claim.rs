@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use ore::{self, state::Proof, utils::AccountDeserialize};
+use orz::{self, state::Proof, utils::AccountDeserialize};
 use solana_program::pubkey::Pubkey;
 use solana_sdk::{compute_budget::ComputeBudgetInstruction, signature::Signer};
 
@@ -18,7 +18,7 @@ impl Miner {
             None => self.initialize_ata().await,
         };
         let amount = if let Some(amount) = amount {
-            (amount * 10f64.powf(ore::TOKEN_DECIMALS as f64)) as u64
+            (amount * 10f64.powf(orz::TOKEN_DECIMALS as f64)) as u64
         } else {
             match client.get_account(&proof_pubkey(pubkey)).await {
                 Ok(proof_account) => {
@@ -31,17 +31,17 @@ impl Miner {
                 }
             }
         };
-        let amountf = (amount as f64) / (10f64.powf(ore::TOKEN_DECIMALS as f64));
+        let amountf = (amount as f64) / (10f64.powf(orz::TOKEN_DECIMALS as f64));
         let cu_limit_ix = ComputeBudgetInstruction::set_compute_unit_limit(CU_LIMIT_CLAIM);
         let cu_price_ix = ComputeBudgetInstruction::set_compute_unit_price(self.priority_fee);
-        let ix = ore::instruction::claim(pubkey, beneficiary, amount);
+        let ix = orz::instruction::claim(pubkey, beneficiary, amount);
         println!("Submitting claim transaction...");
         match self
             .send_and_confirm(&[cu_limit_ix, cu_price_ix, ix], false, false)
             .await
         {
             Ok(sig) => {
-                println!("Claimed {:} ORE to account {:}", amountf, beneficiary);
+                println!("Claimed {:} ORZ to account {:}", amountf, beneficiary);
                 println!("{:?}", sig);
             }
             Err(err) => {
@@ -58,7 +58,7 @@ impl Miner {
         // Build instructions.
         let token_account_pubkey = spl_associated_token_account::get_associated_token_address(
             &signer.pubkey(),
-            &ore::MINT_ADDRESS,
+            &orz::MINT_ADDRESS,
         );
 
         // Check if ata already exists
@@ -70,7 +70,7 @@ impl Miner {
         let ix = spl_associated_token_account::instruction::create_associated_token_account(
             &signer.pubkey(),
             &signer.pubkey(),
-            &ore::MINT_ADDRESS,
+            &orz::MINT_ADDRESS,
             &spl_token::id(),
         );
         println!("Creating token account {}...", token_account_pubkey);

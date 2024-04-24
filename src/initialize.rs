@@ -1,4 +1,4 @@
-use ore::TREASURY_ADDRESS;
+use orz::TREASURY_ADDRESS;
 
 use solana_sdk::signature::Signer;
 
@@ -14,7 +14,7 @@ impl Miner {
         }
 
         // Sign and send transaction.
-        let ix = ore::instruction::initialize(signer.pubkey());
+        let ix = orz::instruction::initialize(signer.pubkey());
         self.send_and_confirm(&[ix], false, false)
             .await
             .expect("Transaction failed");

@@ -1,7 +1,7 @@
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::engine::Engine as _;
-use ore::{state::Bus, utils::AccountDeserialize};
-use ore::{BUS_ADDRESSES, BUS_COUNT};
+use orz::{state::Bus, utils::AccountDeserialize};
+use orz::{BUS_ADDRESSES, BUS_COUNT};
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::{
     client_error::Result as ClientResult,
@@ -46,17 +46,17 @@ const HASH_RETRIES: usize = 4;
 // const RESET_ODDS: u64 = 20;
 
 pub struct WalletQueueMessage {
-    pub wallet: (String, Option<(ore::state::Hash, keccak::Hash, u64)>),
+    pub wallet: (String, Option<(orz::state::Hash, keccak::Hash, u64)>),
 }
 
 pub struct TransactionQueueMessage {
-    pub wallets: Vec<(String, Option<(ore::state::Hash, keccak::Hash, u64)>)>,
+    pub wallets: Vec<(String, Option<(orz::state::Hash, keccak::Hash, u64)>)>,
     pub encoded_unsigned_tx: String,
     pub hash_time_elapsed: u64,
 }
 
 pub struct TransactionResultMessage {
-    pub wallets: Vec<(String, Option<(ore::state::Hash, keccak::Hash, u64)>)>,
+    pub wallets: Vec<(String, Option<(orz::state::Hash, keccak::Hash, u64)>)>,
     pub sig: String,
     pub tx_time_elapsed: u64,
     pub hash_time_elapsed: u64,
@@ -129,7 +129,7 @@ impl MinerV2 {
                 println!("Proof: {:?}", proof);
                 let cu_limit_ix = ComputeBudgetInstruction::set_compute_unit_limit(CU_LIMIT_CLAIM);
                 let cu_price_ix = ComputeBudgetInstruction::set_compute_unit_price(priority_fee);
-                let ix = ore::instruction::claim(signer.pubkey(), token_account, amount);
+                let ix = orz::instruction::claim(signer.pubkey(), token_account, amount);
 
                 println!("Building tx...");
                 let mut tx = Transaction::new_with_payer(
@@ -248,14 +248,14 @@ impl MinerV2 {
                 let batch_size = if batch_size > 5 { 5 } else { batch_size };
 
                 let mut bus = 0;
-                let mut keys_bytes_with_hashes_and_proofs: Vec<(String, keccak::Hash, ore::state::Hash, u64)> = Vec::new();
+                let mut keys_bytes_with_hashes_and_proofs: Vec<(String, keccak::Hash, orz::state::Hash, u64)> = Vec::new();
                 let mut hash_timer = SystemTime::now();
                 loop {
                     let mut hash_failed = false;
                     if let Some(mssg) = wallet_queue_reader.recv().await {
                         let wallet = mssg.wallet.0;
                         let signer = Keypair::from_base58_string(&wallet);
-                        //let balance = MinerV2::get_ore_display_balance(&rpc_client, signer.pubkey()).await;
+                        //let balance = MinerV2::get_orz_display_balance(&rpc_client, signer.pubkey()).await;
                         MinerV2::register(rpc_client.clone(), &signer, send_interval, priority_fee)
                             .await;
                         println!("\nStarting hash for wallet {}", signer.pubkey());
@@ -278,8 +278,8 @@ impl MinerV2 {
                                         let bus = MinerV2::get_bus(&rpc_client, bus)
                                             .await
                                             .expect("Should successfully get bus.");
-                                        let bus_rewards = (bus.rewards as f64) / (10f64.powf(ore::TOKEN_DECIMALS as f64));
-                                        let ix_mine = ore::instruction::mine(
+                                        let bus_rewards = (bus.rewards as f64) / (10f64.powf(orz::TOKEN_DECIMALS as f64));
+                                        let ix_mine = orz::instruction::mine(
                                             signer.pubkey(),
                                             BUS_ADDRESSES[bus.id as usize],
                                             last_hash.0.into(), //TODO FIX 
@@ -352,7 +352,7 @@ impl MinerV2 {
 
                             let proof_ = get_proof(&rpc_client, signer.pubkey()).await;
                             if !MinerV2::validate_hash(
-                                ore::state::Hash(next_hash.to_bytes()).into(),
+                                orz::state::Hash(next_hash.to_bytes()).into(),
                                 proof_.hash.into(),
                                 signer.pubkey(),
                                 nonce,
@@ -407,7 +407,7 @@ impl MinerV2 {
                         //        );
                         //        let cu_price_ix =
                         //            ComputeBudgetInstruction::set_compute_unit_price(priority_fee);
-                        //        let reset_ix = ore::instruction::reset(signer.pubkey());
+                        //        let reset_ix = orz::instruction::reset(signer.pubkey());
                         //        MinerV2::send_and_confirm(
                         //            &signer,
                         //            rpc_client.clone(),
@@ -434,8 +434,8 @@ impl MinerV2 {
                             .await
                             .expect("Should successfully get bus.");
                         let bus_rewards =
-                            (bus.rewards as f64) / (10f64.powf(ore::TOKEN_DECIMALS as f64));
-                        println!("Will be sending on bus {} ({} ORE)", bus.id, bus_rewards);
+                            (bus.rewards as f64) / (10f64.powf(orz::TOKEN_DECIMALS as f64));
+                        println!("Will be sending on bus {} ({} ORZ)", bus.id, bus_rewards);
 
                         let mut keypairs = vec![];
                         let mut wallets_batch = vec![];
@@ -445,7 +445,7 @@ impl MinerV2 {
                             wallets_batch.push((key_bytes.clone(), Some((proof_hash, next_hash, nonce))));
                             let signer = Keypair::from_base58_string(&key_bytes);
                             keypairs.push(Keypair::from_base58_string(&key_bytes));
-                            let ix_mine = ore::instruction::mine(
+                            let ix_mine = orz::instruction::mine(
                                 signer.pubkey(),
                                 BUS_ADDRESSES[bus.id as usize],
                                 next_hash.into(),
@@ -690,24 +690,24 @@ impl MinerV2 {
 
             println!("Total Sol: {}", lamports_to_sol(total_lamports));
 
-            println!("Loading ore balances and rewards...");
-            let mut total_ore_balance = 0.0;
-            let mut total_ore_rewards_claimable = 0.0;
+            println!("Loading orz balances and rewards...");
+            let mut total_orz_balance = 0.0;
+            let mut total_orz_rewards_claimable = 0.0;
             for pubkey in &results_pubkeys {
                 let pubkey = pubkey.to_owned();
 
                 sleep(Duration::from_millis(200)).await;
-                let ore_balance = MinerV2::get_ore_display_balance_v2(&rpc_client, pubkey).await;
-                total_ore_balance += ore_balance;
+                let orz_balance = MinerV2::get_orz_display_balance_v2(&rpc_client, pubkey).await;
+                total_orz_balance += orz_balance;
 
                 sleep(Duration::from_millis(200)).await;
                 let proof = get_proof(&rpc_client, pubkey).await;
                 let rewards = proof.claimable_rewards;
 
-                total_ore_rewards_claimable += (rewards as f64) / 1000000000.0;
+                total_orz_rewards_claimable += (rewards as f64) / 1000000000.0;
             }
-            println!("Total Ore Balance: {}", total_ore_balance);
-            println!("Total Ore Claimable: {}", total_ore_rewards_claimable);
+            println!("Total Orz Balance: {}", total_orz_balance);
+            println!("Total Orz Claimable: {}", total_orz_rewards_claimable);
 
             let thread_handle = tokio::spawn(async move {
                 let wallet_queue = wallet_queue_sender_1.clone();
@@ -915,11 +915,11 @@ impl MinerV2 {
                         }
 
                         let balance =
-                            MinerV2::get_ore_display_balance(&rpc_client, signer.pubkey()).await;
+                            MinerV2::get_orz_display_balance(&rpc_client, signer.pubkey()).await;
                         let rewards = (proof.claimable_rewards as f64)
-                            / (10f64.powf(ore::TOKEN_DECIMALS as f64));
-                        println!("Balance: {} ORE", balance);
-                        println!("Claimable: {} ORE", rewards);
+                            / (10f64.powf(orz::TOKEN_DECIMALS as f64));
+                        println!("Balance: {} ORZ", balance);
+                        println!("Claimable: {} ORZ", rewards);
                     }
                     Err(e) => {
                         println!("Error: {}", e);
@@ -1101,7 +1101,7 @@ impl MinerV2 {
         // Sign and send transaction.
         println!("Generating challenge...");
         loop {
-            let ix = ore::instruction::register(signer.pubkey());
+            let ix = orz::instruction::register(signer.pubkey());
             let mut tx = Transaction::new_with_payer(&[ix.clone()], Some(&signer.pubkey()));
             let (hash, last_valid_blockheight) = rpc_client
                 .get_latest_blockhash_with_commitment(rpc_client.commitment())
@@ -1183,7 +1183,7 @@ impl MinerV2 {
         )));
         let pubkey = signer.pubkey();
 
-        let mut child = tokio::process::Command::new(r"D:\Dev\Projects\ore-cli-gpu\windows.exe")
+        let mut child = tokio::process::Command::new(/target/release/nonce-worker-gpu)
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
@@ -1480,9 +1480,9 @@ impl MinerV2 {
         Ok(*Bus::try_from_bytes(&data).unwrap())
     }
 
-    pub async fn get_ore_display_balance_v2(client: &RpcClient, pubkey: Pubkey) -> f64 {
+    pub async fn get_orz_display_balance_v2(client: &RpcClient, pubkey: Pubkey) -> f64 {
         let token_account_address =
-            spl_associated_token_account::get_associated_token_address(&pubkey, &ore::MINT_ADDRESS);
+            spl_associated_token_account::get_associated_token_address(&pubkey, &orz::MINT_ADDRESS);
         match client.get_token_account(&token_account_address).await {
             Ok(token_account) => {
                 if let Some(token_account) = token_account {
@@ -1499,9 +1499,9 @@ impl MinerV2 {
         }
     }
 
-    pub async fn get_ore_display_balance(client: &RpcClient, pubkey: Pubkey) -> String {
+    pub async fn get_orz_display_balance(client: &RpcClient, pubkey: Pubkey) -> String {
         let token_account_address =
-            spl_associated_token_account::get_associated_token_address(&pubkey, &ore::MINT_ADDRESS);
+            spl_associated_token_account::get_associated_token_address(&pubkey, &orz::MINT_ADDRESS);
         match client.get_token_account(&token_account_address).await {
             Ok(token_account) => {
                 if let Some(token_account) = token_account {
@@ -1523,7 +1523,7 @@ impl MinerV2 {
         // Build instructions.
         let token_account_pubkey = spl_associated_token_account::get_associated_token_address(
             &signer.pubkey(),
-            &ore::MINT_ADDRESS,
+            &orz::MINT_ADDRESS,
         );
 
         // Check if ata already exists
@@ -1535,7 +1535,7 @@ impl MinerV2 {
         let ix = spl_associated_token_account::instruction::create_associated_token_account(
             &signer.pubkey(),
             &signer.pubkey(),
-            &ore::MINT_ADDRESS,
+            &orz::MINT_ADDRESS,
             &spl_token::id(),
         );
         println!("Creating token account {}...", token_account_pubkey);
