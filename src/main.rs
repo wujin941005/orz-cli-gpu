@@ -155,7 +155,6 @@ struct MineV2Args {
     threads: u64,
     #[arg(
         long,
-        short = 's',
         value_name = "SEND_INTERVAL",
         help = "The amount of time to wait between tx sends. 100ms is 10 sends per second.",
         default_value = "1000"
@@ -163,7 +162,6 @@ struct MineV2Args {
     send_interval: u64,
     #[arg(
         long,
-        short = 's',
         value_name = "SIMULTATION_ATTEMPS",
         help = "The amount of simulation attempts before sending transaction. Useful for debugging ",
         default_value = None,
